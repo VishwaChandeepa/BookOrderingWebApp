@@ -1,28 +1,23 @@
-const db = require("../config/db");
+const { sql, poolPromise } = require("../config/db");
 
 
 // Create book
-const createBook = async(data)=>{
+const createBook = async (data) => {
 
-    const sql = `
-    INSERT INTO books
-    (title,description,price,image,author_id,category_id)
-    VALUES(?,?,?,?,?,?)
-    `;
+    const pool = await poolPromise;
 
-
-    const [result] = await db.query(
-        sql,
-        [
-            data.title,
-            data.description,
-            data.price,
-            data.image,
-            data.author_id,
-            data.category_id
-        ]
-    );
-
+    const result = await pool.request()
+        .input("title", sql.NVarChar, data.title)
+        .input("description", sql.NVarChar, data.description)
+        .input("price", sql.Decimal(10, 2), data.price)
+        .input("image", sql.NVarChar, data.image)
+        .input("author_id", sql.Int, data.author_id)
+        .input("category_id", sql.Int, data.category_id)
+        .query(`
+            INSERT INTO books
+            (title, description, price, image, author_id, category_id)
+            VALUES (@title, @description, @price, @image, @author_id, @category_id)
+        `);
 
     return result;
 
@@ -31,72 +26,62 @@ const createBook = async(data)=>{
 
 
 // Get all books
-const getBooks = async()=>{
+const getBooks = async () => {
 
-    const sql = `
-    SELECT 
-    books.*,
-    categories.name AS category
+    const pool = await poolPromise;
 
-    FROM books
+    const result = await pool.request()
+        .query(`
+            SELECT
+                books.*,
+                categories.name AS category
+            FROM books
+            LEFT JOIN categories
+                ON books.category_id = categories.id
+        `);
 
-    LEFT JOIN categories
-    ON books.category_id = categories.id
-    `;
-
-
-    const [rows] = await db.query(sql);
-
-    return rows;
+    return result.recordset;
 
 };
 
 
 
 // Get one book
+const getBookById = async (id) => {
 
-const getBookById = async(id)=>{
+    const pool = await poolPromise;
 
-    const [rows] = await db.query(
-        "SELECT * FROM books WHERE id=?",
-        [id]
-    );
+    const result = await pool.request()
+        .input("id", sql.Int, id)
+        .query("SELECT * FROM books WHERE id = @id");
 
-    return rows[0];
+    return result.recordset[0];
 
 };
 
 
 
 // Update book
+const updateBook = async (id, data) => {
 
-const updateBook = async(id,data)=>{
+    const pool = await poolPromise;
 
-    const sql = `
-    UPDATE books
-
-    SET title=?,
-    description=?,
-    price=?,
-    image=?,
-    category_id=?
-
-    WHERE id=?
-    `;
-
-
-    const [result] = await db.query(
-        sql,
-        [
-            data.title,
-            data.description,
-            data.price,
-            data.image,
-            data.category_id,
-            id
-        ]
-    );
-
+    const result = await pool.request()
+        .input("id", sql.Int, id)
+        .input("title", sql.NVarChar, data.title)
+        .input("description", sql.NVarChar, data.description)
+        .input("price", sql.Decimal(10, 2), data.price)
+        .input("image", sql.NVarChar, data.image)
+        .input("category_id", sql.Int, data.category_id)
+        .query(`
+            UPDATE books
+            SET title = @title,
+                description = @description,
+                price = @price,
+                image = @image,
+                category_id = @category_id
+            WHERE id = @id
+        `);
 
     return result;
 
@@ -105,14 +90,13 @@ const updateBook = async(id,data)=>{
 
 
 // Delete book
+const deleteBook = async (id) => {
 
-const deleteBook = async(id)=>{
+    const pool = await poolPromise;
 
-    const [result] = await db.query(
-        "DELETE FROM books WHERE id=?",
-        [id]
-    );
-
+    const result = await pool.request()
+        .input("id", sql.Int, id)
+        .query("DELETE FROM books WHERE id = @id");
 
     return result;
 
@@ -120,7 +104,7 @@ const deleteBook = async(id)=>{
 
 
 
-module.exports={
+module.exports = {
     createBook,
     getBooks,
     getBookById,

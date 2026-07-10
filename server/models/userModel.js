@@ -1,42 +1,42 @@
-const db = require("../config/db");
+const { sql, poolPromise } = require("../config/db");
 
 
-const createUser = async(name,email,password,role)=>{
+const createUser = async (name, email, password, role) => {
 
-    const sql = `
-    INSERT INTO users
-    (name,email,password,role)
-    VALUES(?,?,?,?)
-    `;
+    const pool = await poolPromise;
 
-    const [result] = await db.query(
-        sql,
-        [name,email,password,role]
-    );
+    const result = await pool.request()
+        .input("name", sql.NVarChar, name)
+        .input("email", sql.NVarChar, email)
+        .input("password", sql.NVarChar, password)
+        .input("role", sql.NVarChar, role)
+        .query(`
+            INSERT INTO users (name, email, password, role)
+            VALUES (@name, @email, @password, @role)
+        `);
 
     return result;
 
 };
 
 
-const findUserByEmail = async(email)=>{
+const findUserByEmail = async (email) => {
 
-    const sql = `
-    SELECT * FROM users
-    WHERE email = ?
-    `;
+    const pool = await poolPromise;
 
-    const [rows] = await db.query(
-        sql,
-        [email]
-    );
+    const result = await pool.request()
+        .input("email", sql.NVarChar, email)
+        .query(`
+            SELECT * FROM users
+            WHERE email = @email
+        `);
 
-    return rows[0];
+    return result.recordset[0];
 
 };
 
 
-module.exports={
+module.exports = {
     createUser,
     findUserByEmail
 };

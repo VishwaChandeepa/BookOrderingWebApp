@@ -1,35 +1,35 @@
-    const db = require("../config/db");
+const { sql, poolPromise } = require("../config/db");
 
 
-const createCategory = async(name)=>{
+const createCategory = async (name) => {
 
-    const sql = `
-    INSERT INTO categories(name)
-    VALUES(?)
-    `;
+    const pool = await poolPromise;
 
-    const [result] = await db.query(
-        sql,
-        [name]
-    );
+    const result = await pool.request()
+        .input("name", sql.NVarChar, name)
+        .query(`
+            INSERT INTO categories (name)
+            VALUES (@name)
+        `);
 
     return result;
 
 };
 
 
-const getCategories = async()=>{
+const getCategories = async () => {
 
-    const [rows] = await db.query(
-        "SELECT * FROM categories"
-    );
+    const pool = await poolPromise;
 
-    return rows;
+    const result = await pool.request()
+        .query("SELECT * FROM categories");
+
+    return result.recordset;
 
 };
 
 
-module.exports={
+module.exports = {
     createCategory,
     getCategories
 };

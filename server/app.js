@@ -35,8 +35,9 @@ app.get("/", (req, res) => {
 
 app.get("/test-db", async (req, res) => {
     try {
-        const [result] = await db.query("SELECT 1 + 1 AS solution");
-        res.json(result);
+        const pool = await db.poolPromise;
+        const result = await pool.request().query("SELECT 1 + 1 AS solution");
+        res.json(result.recordset);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
