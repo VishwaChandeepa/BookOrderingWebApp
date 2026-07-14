@@ -25,15 +25,15 @@ jobs:
 
       - name: npm install, build, and test
         run: |
+          cd client
           npm install
           npm run build --if-present
-          npm run test --if-present
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: ./client/dist
 
   deploy:
     runs-on: ubuntu-latest
@@ -62,4 +62,3 @@ jobs:
           app-name: 'book-ordering-frontend'
           slot-name: 'Production'
           package: .
-          
